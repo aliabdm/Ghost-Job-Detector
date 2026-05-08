@@ -30,8 +30,7 @@ It explains WHY a job post is risky, translates corporate HR language into real 
 
 ## 🚀 Live Demo
 
-https://ghost-job-detector.vercel.app/
-
+https://ghost-job-detector-rlcx.vercel.app/
 ---
 
 ## 🎯 Key Features
