@@ -21,11 +21,33 @@ type AnalysisResult = {
   };
 };
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const GEMMA_MODELS = [
-  "google/gemma-4-26b-a4b-it:free",
-  "google/gemma-4-31b-it:free"
-] as const;
+// AI Provider configurations
+const PROVIDERS = {
+  openrouter: {
+    url: "https://openrouter.ai/api/v1/chat/completions",
+    models: [
+      "google/gemma-4-26b-a4b-it:free",
+      "google/gemma-4-31b-it:free"
+    ],
+    key: process.env.OPENROUTER_KEY
+  },
+  groq: {
+    url: "https://api.groq.com/openai/v1/chat/completions",
+    models: [
+      "llama-3.1-8b-instant",
+      "mixtral-8x7b-32768"
+    ],
+    key: process.env.GROQ_KEY
+  },
+  together: {
+    url: "https://api.together.xyz/v1/chat/completions",
+    models: [
+      "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+      "mistralai/Mixtral-8x7B-Instruct-v0.1"
+    ],
+    key: process.env.TOGETHER_KEY
+  }
+} as const;
 const VALID_VERDICTS = new Set<Verdict>([
   "legit",
   "ghost_job",
@@ -46,11 +68,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.OPENROUTER_KEY;
+    const availableProviders = Object.entries(PROVIDERS).filter(
+      ([_, config]) => config.key
+    );
 
-    if (!apiKey) {
+    if (availableProviders.length === 0) {
       return NextResponse.json(
-        { error: "OPENROUTER_KEY is not configured." },
+        { error: "No AI provider API keys configured. Set GROQ_KEY, TOGETHER_KEY, or OPENROUTER_KEY." },
         { status: 500 }
       );
     }
@@ -94,7 +118,7 @@ Rules:
 Job Post:
 ${jobText.trim()}`;
 
-    const content = await callGemmaAI(apiKey, prompt);
+    const content = await callAIProviders(availableProviders, prompt);
 
     const parsed = parseModelJson(content);
     const result = normalizeResult(parsed);
@@ -113,61 +137,71 @@ ${jobText.trim()}`;
   }
 }
 
-async function callGemmaAI(apiKey: string, prompt: string) {
+async function callAIProviders(providers: Array<[string, typeof PROVIDERS[keyof typeof PROVIDERS]]>, prompt: string) {
   let lastError = "";
 
-  for (const model of GEMMA_MODELS) {
-    for (let attempt = 1; attempt <= 2; attempt += 1) {
-      try {
-        const content = await requestGemmaModel(apiKey, prompt, model);
+  for (const [providerName, providerConfig] of providers) {
+    for (const model of providerConfig.models) {
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          const content = await requestAIModel(providerConfig, prompt, model, providerName);
 
-        if (content) {
-          return content;
+          if (content) {
+            return content;
+          }
+
+          lastError = `The ${providerName} model returned an empty response.`;
+        } catch (error) {
+          lastError = error instanceof Error ? error.message : `${providerName} request failed.`;
         }
 
-        lastError = "The model returned an empty response.";
-      } catch (error) {
-        lastError = error instanceof Error ? error.message : "Gemma request failed.";
-      }
-
-      if (attempt === 1) {
-        await sleep(2000);
+        if (attempt === 1) {
+          await sleep(1000);
+        }
       }
     }
   }
 
   throw new Error(
     lastError
-      ? `AI is busy right now. Please try again in a few seconds.`
-      : "AI is busy right now. Please try again in a few seconds."
+      ? `All AI providers are busy right now. Please try again in a few seconds.`
+      : "All AI providers are busy right now. Please try again in a few seconds."
   );
 }
 
-async function requestGemmaModel(
-  apiKey: string,
+async function requestAIModel(
+  providerConfig: typeof PROVIDERS[keyof typeof PROVIDERS],
   prompt: string,
-  model: (typeof GEMMA_MODELS)[number]
+  model: string,
+  providerName: string
 ) {
   const controller = new AbortController();
   const timeout = windowlessTimeout(() => controller.abort(), 30000);
 
   try {
-    const openRouterResponse = await fetch(OPENROUTER_URL, {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+
+    // Set authorization based on provider
+    if (providerName === "openrouter") {
+      headers.Authorization = `Bearer ${providerConfig.key}`;
+      headers["HTTP-Referer"] = "https://ghost-job-detector.vercel.app";
+      headers["X-Title"] = "Ghost Job Detector";
+    } else {
+      headers.Authorization = `Bearer ${providerConfig.key}`;
+    }
+
+    const response = await fetch(providerConfig.url, {
       method: "POST",
       signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://ghost-job-detector.vercel.app",
-        "X-Title": "Ghost Job Detector"
-      },
+      headers,
       body: JSON.stringify({
         model,
         messages: [
           {
             role: "system",
-            content:
-              "You return strict JSON only. Never include markdown or prose outside JSON."
+            content: "You return strict JSON only. Never include markdown or prose outside JSON."
           },
           {
             role: "user",
@@ -178,14 +212,14 @@ async function requestGemmaModel(
       })
     });
 
-    if (!openRouterResponse.ok) {
-      const details = sanitizeOpenRouterError(await safeReadText(openRouterResponse));
+    if (!response.ok) {
+      const details = await safeReadText(response);
       throw new Error(
-        details || getOpenRouterErrorMessage(openRouterResponse.status)
+        details || getProviderErrorMessage(response.status, providerName)
       );
     }
 
-    const data = await openRouterResponse.json();
+    const data = await response.json();
     const content = data?.choices?.[0]?.message?.content;
 
     return typeof content === "string" && content.trim() ? content : "";
@@ -227,12 +261,14 @@ function sanitizeOpenRouterError(details: string) {
   }
 }
 
-function getOpenRouterErrorMessage(status: number) {
-  if (status === 401) return "OpenRouter rejected the API key.";
-  if (status === 402) return "OpenRouter says this key has no available credits.";
-  if (status === 404) return "OpenRouter could not find the configured model.";
-  if (status === 429) return "OpenRouter rate limit reached. Try again shortly.";
-  return "OpenRouter request failed.";
+function getProviderErrorMessage(status: number, providerName: string) {
+  const provider = providerName.charAt(0).toUpperCase() + providerName.slice(1);
+  
+  if (status === 401) return `${provider} rejected the API key.`;
+  if (status === 402) return `${provider} says this key has no available credits.`;
+  if (status === 404) return `${provider} could not find the configured model.`;
+  if (status === 429) return `${provider} rate limit reached. Try again shortly.`;
+  return `${provider} request failed.`;
 }
 
 function parseModelJson(content: string): unknown {
