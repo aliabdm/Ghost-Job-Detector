@@ -24,9 +24,7 @@ type AnalysisResult = {
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const GEMMA_MODELS = [
   "google/gemma-4-26b-a4b-it:free",
-  "google/gemma-4-31b-it:free",
-  "google/gemma-3-27b-it:free",
-  "google/gemma-3-12b-it:free"
+  "google/gemma-4-31b-it:free"
 ] as const;
 const VALID_VERDICTS = new Set<Verdict>([
   "legit",

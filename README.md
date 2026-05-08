@@ -46,11 +46,9 @@ Fallback order:
 ```text
 google/gemma-4-26b-a4b-it:free
 google/gemma-4-31b-it:free
-google/gemma-3-27b-it:free
-google/gemma-3-12b-it:free
 ```
 
-If a model is rate-limited or fails, the API silently retries once after 2 seconds, then moves to the next Gemma model. If all models fail, the user sees a clean busy message.
+If a model is rate-limited or fails, the API silently retries once after 2 seconds, then moves to the next Gemma 4 model. If all Gemma 4 models fail, the user sees a clean busy message.
 
 ## Environment Variables
 
