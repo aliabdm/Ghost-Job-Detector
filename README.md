@@ -1,33 +1,122 @@
 # Ghost Job Detector
 
-Ghost Job Detector is a production-ready Next.js web app that helps job seekers analyze job posts before applying.
+## ⚠️ Why This Project Exists
 
-Users paste a job description, and the app uses OpenRouter Gemma models to classify the post as:
+Most job posts today are unclear, exaggerated, or completely misleading.
 
-- `legit`
-- `ghost_job`
-- `scam`
-- `suspicious`
+Candidates often waste hours applying to roles that are:
+- not actively hiring
+- poorly defined
+- designed to collect applications without real intent
 
-It also explains the reasoning, highlights red flags, translates corporate HR language into plain meaning, and suggests who should or should not apply.
+Ghost Job Detector uses AI to decode job posts and reveal what companies actually mean behind corporate language.
 
-## What The App Does
+---
 
-- Detects ghost-job patterns, scams, and suspicious job postings.
-- Flags vague company details, unrealistic expectations, payment tricks, fake urgency, and weak hiring intent.
-- Translates HR phrases like "fast-paced environment" or "wear many hats" into real-world meaning.
-- Infers the real seniority level and actual candidate fit.
-- Shows a confidence score and structured JSON output.
-- Includes copy-to-clipboard, loading skeletons, reset flow, and mobile-responsive UI.
-- Requires no database, authentication, or separate backend service.
+## 🧠 What I Built
 
-## Tech Stack
+Ghost Job Detector is a web app that analyzes job descriptions and classifies them as:
 
-- Next.js App Router
-- React
+- Legit
+- Ghost Job
+- Scam
+- Suspicious
+
+But it goes beyond classification.
+
+It explains WHY a job post is risky, translates corporate HR language into real meaning, and estimates who should actually apply.
+
+---
+
+## 🚀 Live Demo
+
+https://ghost-job-detector.vercel.app/
+
+---
+
+## 🎯 Key Features
+
+- AI-powered job post classification
+- Ghost job detection
+- HR language translation into real meaning
+- Candidate fit analysis
+- Confidence scoring
+- Structured JSON reasoning output
+- Real-time fallback model system
+- Fully responsive UI
+
+---
+
+## 🧩 How It Works
+
+1. Paste a job description
+2. Click Analyze
+3. AI returns:
+   - Verdict (legit / ghost / scam / suspicious)
+   - Reasons
+   - Red flags
+   - HR translation
+   - Who should apply
+
+---
+
+## 🧠 HR Reality Layer
+
+The AI translates corporate phrases like:
+
+- "Fast-paced environment" → Expect overwork and pressure
+- "Wear many hats" → Multiple roles without proper compensation
+- "Self-starter required" → Little guidance or onboarding
+
+---
+
+## 🤖 How I Used Gemma 4
+
+This project uses Google Gemma 4 as the reasoning engine:
+
+- `google/gemma-4-26b-a4b-it:free` (primary model)
+- `google/gemma-4-31b-it:free` (fallback model)
+
+Gemma is responsible for:
+- interpreting job descriptions
+- detecting deception signals
+- translating HR language
+- generating structured JSON output
+
+---
+
+## 🧠 Technical Insight
+
+The system enforces strict JSON output to ensure:
+- consistent UI rendering
+- safe parsing
+- predictable AI behavior
+- reliable fallback handling
+
+---
+
+## 📸 Screenshots
+
+### Job Analysis Result
+![Result](./docs/promo-success/03-analysis-result.png)
+
+---
+
+## 💡 Impact
+
+This tool helps job seekers avoid wasting time on misleading job posts and improves decision-making before applying.
+
+---
+
+## 🛠 Tech Stack
+
+- Next.js
 - TypeScript
 - Vanilla CSS
 - OpenRouter API
+- Gemma 4 Models
+- Vercel Deployment
+
 - Docker for optional local containerized runs
 - Vercel-ready deployment
 
@@ -175,12 +264,6 @@ docker stop ghost-job-detector-live
 
 ## Pull Latest Changes
 
-If the project is already connected to GitHub:
-
-```bash
-git pull origin master
-```
-
 Then rebuild and restart Docker:
 
 ```bash
@@ -189,86 +272,9 @@ docker build -t ghost-job-detector .
 docker run --rm -d --name ghost-job-detector-live -p 3000:3000 --env-file .env.local ghost-job-detector
 ```
 
-## Git Commands
+## 
+---
 
-Check status:
+## 📌 Note
 
-```bash
-git status
-```
-
-Add all project files:
-
-```bash
-git add .
-```
-
-Commit:
-
-```bash
-git commit -m "Build Ghost Job Detector"
-```
-
-Add a GitHub remote:
-
-```bash
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-```
-
-Push to GitHub:
-
-```bash
-git push -u origin master
-```
-
-## Deploy To Vercel
-
-1. Push the project to GitHub.
-2. Import the GitHub repository into Vercel.
-3. Add this environment variable in Vercel:
-
-```text
-OPENROUTER_KEY
-```
-
-4. Deploy.
-
-Vercel will detect Next.js automatically. No Docker is needed on Vercel.
-
-## API Route
-
-The app uses:
-
-```text
-POST /api/analyze
-```
-
-Request body:
-
-```json
-{
-  "jobText": "Paste job description here"
-}
-```
-
-Response shape:
-
-```json
-{
-  "result": {
-    "verdict": "legit | ghost_job | scam | suspicious",
-    "confidence": 0.8,
-    "reasons": [],
-    "red_flags": [],
-    "summary": "",
-    "advice": "",
-    "hr_translation": [],
-    "who_should_apply": {
-      "recommended_roles": [],
-      "skill_level": "",
-      "apply_if": [],
-      "do_not_apply_if": []
-    }
-  }
-}
-```
+This project is part of the Gemma 4 Challenge submission.
