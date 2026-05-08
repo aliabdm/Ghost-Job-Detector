@@ -98,7 +98,7 @@ The system enforces strict JSON output to ensure:
 ## 📸 Screenshots
 
 ### Job Analysis Result
-![Result](./docs/promo-success/03-analysis-result.png)
+![Result](./docs/03-analysis-result.png)
 
 ---
 
