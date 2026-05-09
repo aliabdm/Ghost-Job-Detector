@@ -189,7 +189,7 @@ export default function Home() {
         <p>&copy; 2026 Mohammad Ali Abdul Wahed. All rights reserved.</p>
         <div className="socialLinks">
           <a
-            href="https://www.linkedin.com/in/mohammad-ali-abd-al-wahed"
+            href="https://www.linkedin.com/in/mohammad-ali-abdul-wahed-1533b9171/"
             target="_blank"
             rel="noreferrer"
           >
